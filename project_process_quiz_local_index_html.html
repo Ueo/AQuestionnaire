@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>專案流程困難度心理測驗</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #64748b;
+      --primary: #0f172a;
+      --success-bg: #f0fdf4;
+      --success-border: #bbf7d0;
+      --success-text: #15803d;
+      --error-bg: #fef2f2;
+      --error-border: #fecaca;
+      --error-text: #b91c1c;
+      --shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+      --radius-xl: 24px;
+      --radius-lg: 18px;
+      --radius-md: 14px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", sans-serif; }
+    body { min-height: 100vh; }
+    .page { max-width: 920px; margin: 0 auto; padding: 12px 12px 28px; }
+    .card { background: var(--card); border-radius: var(--radius-xl); box-shadow: var(--shadow); }
+    .header { padding: 20px 18px 10px; }
+    .title-row { display: flex; gap: 12px; align-items: flex-start; }
+    .icon-box { width: 48px; height: 48px; border-radius: 18px; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 22px; flex: 0 0 auto; }
+    h1 { font-size: 28px; line-height: 1.25; margin: 0 0 6px; }
+    .subtitle { margin: 0; color: var(--muted); line-height: 1.6; font-size: 15px; }
+    .sticky-progress { position: sticky; top: 0; z-index: 30; background: rgba(255,255,255,0.96); backdrop-filter: blur(8px); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 12px 18px; box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04); }
+    .progress-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 14px; font-weight: 600; }
+    .progress-track { width: 100%; height: 12px; background: #e2e8f0; border-radius: 999px; overflow: hidden; }
+    .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #0f172a, #334155); transition: width 0.2s ease; }
+    .content { padding: 16px 18px 20px; display: grid; gap: 20px; }
+    .question-card { border: 1px solid var(--border); border-radius: var(--radius-lg); background: white; padding: 16px; }
+    .question-head { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 14px; }
+    .badge { border: 1px solid var(--border); border-radius: 999px; padding: 5px 11px; font-size: 13px; white-space: nowrap; color: #334155; background: white; }
+    .question-title { margin: 0; font-size: 16px; line-height: 1.6; }
+    .options { display: grid; gap: 10px; }
+    .option { display: flex; gap: 12px; align-items: flex-start; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px; cursor: pointer; transition: 0.15s ease; background: white; }
+    .option:hover { background: #f8fafc; }
+    .option.selected { border-color: #0f172a; background: #f8fafc; }
+    .option input { margin-top: 2px; transform: scale(1.15); accent-color: #0f172a; }
+    .option-text { font-size: 15px; line-height: 1.65; }
+    .option-key { font-weight: 700; margin-right: 4px; }
+    .sticky-actions { position: sticky; bottom: 10px; z-index: 20; display: grid; gap: 10px; background: rgba(255,255,255,0.95); backdrop-filter: blur(8px); border: 1px solid var(--border); border-radius: 24px; padding: 12px; box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12); }
+    .btn-row { display: grid; gap: 10px; }
+    button { appearance: none; border: 0; border-radius: 16px; height: 48px; padding: 0 18px; font-size: 16px; font-weight: 600; cursor: pointer; transition: 0.15s ease; }
+    .btn-primary { background: #0f172a; color: white; }
+    .btn-primary:disabled { background: #94a3b8; cursor: not-allowed; }
+    .btn-secondary { background: white; color: #0f172a; border: 1px solid var(--border); }
+    .message { border-radius: 16px; padding: 14px 16px; font-size: 14px; line-height: 1.6; display: none; }
+    .message.show { display: block; }
+    .message.success { background: var(--success-bg); border: 1px solid var(--success-border); color: var(--success-text); }
+    .message.error { background: var(--error-bg); border: 1px solid var(--error-border); color: var(--error-text); }
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.8); backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; padding: 14px; z-index: 100; }
+    .modal-backdrop.show { display: flex; }
+    .modal { width: min(920px, 100%); max-height: calc(100vh - 28px); overflow: auto; background: white; border-radius: 28px; box-shadow: 0 24px 60px rgba(0,0,0,0.24); }
+    .modal-header { background: #0f172a; color: white; padding: 18px; border-bottom: 1px solid rgba(255,255,255,0.12); display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
+    .modal-title { margin: 0 0 6px; font-size: 24px; }
+    .modal-desc { margin: 0; color: #cbd5e1; line-height: 1.6; font-size: 14px; }
+    .close-btn { background: transparent; color: white; border: 1px solid rgba(255,255,255,0.28); height: 42px; padding: 0 14px; font-size: 14px; flex: 0 0 auto; }
+    .modal-body { padding: 18px; display: grid; gap: 18px; }
+    .top-row { display: flex; justify-content: space-between; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .meta { color: var(--muted); font-size: 14px; line-height: 1.7; }
+    .panel { border: 1px solid var(--border); border-radius: 18px; background: #f8fafc; padding: 14px; }
+    .panel-title { margin: 0 0 8px; font-size: 15px; font-weight: 700; }
+    .raw-list { max-height: 110px; overflow: auto; background: white; border-radius: 14px; padding: 10px 12px; font-size: 12px; color: var(--muted); line-height: 1.7; margin-top: 10px; word-break: break-all; }
+    .chart-grid { display: grid; gap: 18px; }
+    .chart-wrap { border: 1px solid var(--border); border-radius: 18px; background: #f8fafc; padding: 12px; min-height: 340px; position: relative; }
+    .legend-list { display: grid; gap: 10px; }
+    .legend-item { border: 1px solid var(--border); border-radius: 16px; padding: 12px 14px; background: white; }
+    .legend-head { display: flex; gap: 10px; align-items: center; margin-bottom: 6px; font-weight: 600; }
+    .swatch { width: 14px; height: 14px; border-radius: 999px; flex: 0 0 auto; }
+    .empty { color: var(--muted); text-align: center; line-height: 1.8; display: flex; align-items: center; justify-content: center; min-height: 300px; }
+    @media (min-width: 768px) {
+      .page { padding: 24px 24px 40px; }
+      .header { padding: 24px 24px 12px; }
+      .sticky-progress { padding: 12px 24px; }
+      .content { padding: 18px 24px 24px; }
+      .btn-row { grid-template-columns: auto auto; justify-content: start; }
+      .sticky-actions { position: static; background: transparent; border: 0; box-shadow: none; padding: 0; }
+      .chart-grid { grid-template-columns: 1.2fr 0.8fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="card">
+      <div class="header">
+        <div class="title-row">
+          <div class="icon-box">📝</div>
+          <div>
+            <h1>專案流程困難度心理測驗</h1>
+            <p class="subtitle">匿名快速填答，送出後直接寫入 Google Sheet，供後續集中統計與分析。</p>
+          </div>
+        </div>
+      </div>
+      <div class="sticky-progress">
+        <div class="progress-row">
+          <span>填答進度</span>
+          <span id="progressText">0%</span>
+        </div>
+        <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
+      </div>
+      <div id="questionsContainer" class="content"></div>
+    </div>
+  </div>
+
+  <div id="secretModal" class="modal-backdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <h2 class="modal-title">隱藏統計畫面</h2>
+          <p class="modal-desc">依 Google Sheet L 欄資料統計目前問卷結果。</p>
+        </div>
+        <button id="closeModalBtn" class="close-btn" type="button">關閉</button>
+      </div>
+      <div class="modal-body">
+        <div class="top-row">
+          <div class="meta">
+            <div>資料來源：Google Sheet L 欄</div>
+            <div>累計計數：<span id="totalChartResponses">0</span></div>
+          </div>
+          <button id="reloadChartBtn" class="btn-secondary" type="button">重新抓取</button>
+        </div>
+        <div id="chartError" class="message"></div>
+        <div class="panel">
+          <div class="panel-title">除錯資訊</div>
+          <div id="debugMessage">尚未開始讀取</div>
+          <div id="rawValues" class="raw-list" style="display:none"></div>
+        </div>
+        <div class="chart-grid">
+          <div class="chart-wrap">
+            <canvas id="pieCanvas"></canvas>
+            <div id="chartEmpty" class="empty" style="display:none">目前沒有可顯示的 L 欄統計資料</div>
+          </div>
+          <div id="legendList" class="legend-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const GOOGLE_SHEET_ID = "1Mb1qjGxiCFNxQj2BSQmJJeLYnT3-y50Se1RlP0NdL6w";
+    const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzyHjwzVsKs2AmxvJyYVtxhCBSjCU-isIhzAejDHbPZDzGhPPOtq56wezB4HYCvEVpZ/exec";
+    const KONAMI_SEQUENCE = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"];
+    const PIE_COLORS = ["#ef4444", "#f59e0b", "#eab308", "#22c55e", "#3b82f6", "#64748b"];
+    const flowMap = { A: { code: "R", full: "R - 需求" }, B: { code: "D", full: "D - 設計" }, C: { code: "C", full: "C - 編碼/建置" }, D: { code: "T", full: "T - 測試" }, E: { code: "A", full: "A - 驗收" } };
+    const codeLabelMap = { R: "R - 需求", D: "D - 設計", C: "C - 編碼/建置", T: "T - 測試", A: "A - 驗收" };
+    const questions = [
+      { id: 1, title: "當一個新需求進來時，你最常卡在哪？", options: [
+        { key: "A", text: "不確定客戶真正要什麼" }, { key: "B", text: "不知道怎麼轉成系統架構" }, { key: "C", text: "覺得實作起來很麻煩" }, { key: "D", text: "不確定怎麼驗證是否正確" }, { key: "E", text: "客戶意見一直改來改去" }
+      ]},
+      { id: 2, title: "當專案進度落後時，你直覺覺得原因是？", options: [
+        { key: "A", text: "需求一開始就沒講清楚" }, { key: "B", text: "設計花太多時間" }, { key: "C", text: "開發卡關或技術問題" }, { key: "D", text: "測試抓出太多問題" }, { key: "E", text: "驗收反覆修改" }
+      ]},
+      { id: 3, title: "如果只能避免一個痛點，你最想避開？", options: [
+        { key: "A", text: "客戶需求反覆變動" }, { key: "B", text: "設計反覆重做" }, { key: "C", text: "Debug 很久找不到問題" }, { key: "D", text: "測試一直 fail" }, { key: "E", text: "驗收被打回" }
+      ]},
+      { id: 4, title: "哪一種情境最讓你壓力大？", options: [
+        { key: "A", text: "開會開很久但需求還是不明確" }, { key: "B", text: "設計文件一直被 challenge" }, { key: "C", text: "程式寫不出來或效能不好" }, { key: "D", text: "測試階段 bug 爆炸" }, { key: "E", text: "客戶說『跟我想的不一樣』" }
+      ]},
+      { id: 5, title: "如果讓你選一個階段負責，你最不想選？", options: [
+        { key: "A", text: "需求訪談" }, { key: "B", text: "系統設計" }, { key: "C", text: "開發實作" }, { key: "D", text: "測試驗證" }, { key: "E", text: "客戶驗收" }
+      ]}
+    ];
+    const state = { answers: {}, isSubmitting: false, secretInput: [], chart: null };
+    const els = {
+      questionsContainer: document.getElementById("questionsContainer"), progressText: document.getElementById("progressText"), progressBar: document.getElementById("progressBar"), secretModal: document.getElementById("secretModal"), closeModalBtn: document.getElementById("closeModalBtn"), reloadChartBtn: document.getElementById("reloadChartBtn"), chartError: document.getElementById("chartError"), debugMessage: document.getElementById("debugMessage"), rawValues: document.getElementById("rawValues"), totalChartResponses: document.getElementById("totalChartResponses"), pieCanvas: document.getElementById("pieCanvas"), chartEmpty: document.getElementById("chartEmpty"), legendList: document.getElementById("legendList")
+    };
+    function calculateCounts(answers) {
+      const counts = { R: 0, D: 0, C: 0, T: 0, A: 0 };
+      Object.values(answers).forEach((optionKey) => { if (!optionKey) return; counts[flowMap[optionKey].code] += 1; });
+      const highest = Math.max(...Object.values(counts));
+      const winners = Object.entries(counts).filter(([, value]) => value === highest && value > 0).map(([key]) => key);
+      return { counts, winners };
+    }
+    function buildPieDataFromColumnL(values) {
+      const tally = new Map();
+      values.forEach((raw) => String(raw || "").split(",").map((part) => part.trim()).filter(Boolean).forEach((code) => {
+        const label = codeLabelMap[code] || code;
+        tally.set(label, (tally.get(label) || 0) + 1);
+      }));
+      return Array.from(tally.entries()).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
+    }
+    function updateProgress() {
+      const answered = Object.keys(state.answers).length;
+      const progress = Math.round((answered / questions.length) * 100);
+      els.progressText.textContent = progress + "%";
+      els.progressBar.style.width = progress + "%";
+      const submitBtn = document.getElementById("submitBtn");
+      if (submitBtn) submitBtn.disabled = answered !== questions.length || state.isSubmitting;
+    }
+    function setMessage(type, text) {
+      const msg = document.getElementById("submitMessage");
+      if (!msg) return;
+      if (!text) { msg.className = "message"; msg.textContent = ""; return; }
+      msg.className = `message show ${type}`;
+      msg.textContent = text;
+    }
+    function renderQuestions() {
+      els.questionsContainer.innerHTML = questions.map((q) => `
+        <section class="question-card">
+          <div class="question-head"><span class="badge">第 ${q.id} 題</span><h3 class="question-title">${q.title}</h3></div>
+          <div class="options">
+            ${q.options.map((opt) => `
+              <label class="option ${state.answers[q.id] === opt.key ? "selected" : ""}">
+                <input type="radio" name="q${q.id}" value="${opt.key}" ${state.answers[q.id] === opt.key ? "checked" : ""}>
+                <div class="option-text"><span class="option-key">${opt.key}.</span>${opt.text}</div>
+              </label>
+            `).join("")}
+          </div>
+        </section>
+      `).join("") + `
+        <div class="sticky-actions">
+          <div class="btn-row">
+            <button id="submitBtn" type="button" class="btn-primary" disabled>匿名送出問卷</button>
+            <button id="resetBtn" type="button" class="btn-secondary">重新填寫</button>
+          </div>
+          <div id="submitMessage" class="message"></div>
+        </div>
+      `;
+      els.questionsContainer.querySelectorAll(".option input").forEach((input) => {
+        input.addEventListener("change", (e) => {
+          const radio = e.target;
+          const questionId = Number(radio.name.replace("q", ""));
+          state.answers[questionId] = radio.value;
+          renderQuestions();
+          updateProgress();
+        });
+      });
+      document.getElementById("submitBtn").addEventListener("click", handleSubmit);
+      document.getElementById("resetBtn").addEventListener("click", handleReset);
+    }
+    async function handleSubmit() {
+      if (Object.keys(state.answers).length !== questions.length || state.isSubmitting) return;
+      const scoreResult = calculateCounts(state.answers);
+      const winner = scoreResult.winners.length === 1 ? scoreResult.winners[0] : scoreResult.winners.join(",");
+      const payload = { action: "submit", sheetId: GOOGLE_SHEET_ID, timestamp: new Date().toISOString(), answers: { 1: state.answers[1] || "", 2: state.answers[2] || "", 3: state.answers[3] || "", 4: state.answers[4] || "", 5: state.answers[5] || "" }, counts: scoreResult.counts, result: winner };
+      try {
+        state.isSubmitting = true; updateProgress(); setMessage("", "");
+        await fetch(GOOGLE_APPS_SCRIPT_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) });
+        setMessage("success", "已送出請求，請至 Google Sheet 確認是否新增資料。");
+      } catch (error) {
+        setMessage("error", error && error.message ? error.message : "送出失敗，請稍後再試。");
+      } finally { state.isSubmitting = false; updateProgress(); }
+    }
+    function handleReset() { state.answers = {}; state.isSubmitting = false; setMessage("", ""); renderQuestions(); updateProgress(); }
+    function openSecretModal() { els.secretModal.classList.add("show"); fetchColumnLResults(); }
+    function closeSecretModal() { els.secretModal.classList.remove("show"); }
+    function setChartError(text) {
+      if (!text) { els.chartError.className = "message"; els.chartError.textContent = ""; return; }
+      els.chartError.className = "message show error"; els.chartError.textContent = text;
+    }
+    function updateDebug(message, rawValues) {
+      els.debugMessage.textContent = message || "尚未開始讀取";
+      if (rawValues && rawValues.length) { els.rawValues.style.display = "block"; els.rawValues.textContent = rawValues.join("、"); }
+      else { els.rawValues.style.display = "none"; els.rawValues.textContent = ""; }
+    }
+    function renderLegend(data) {
+      els.legendList.innerHTML = data.map((item, index) => `
+        <div class="legend-item"><div class="legend-head"><span class="swatch" style="background:${PIE_COLORS[index % PIE_COLORS.length]}"></span><span>${item.name}</span></div><div class="meta">${item.value} 筆</div></div>
+      `).join("");
+    }
+    function renderChart(data) {
+      const total = data.reduce((sum, item) => sum + item.value, 0);
+      els.totalChartResponses.textContent = String(total);
+      if (state.chart) { state.chart.destroy(); state.chart = null; }
+      if (!data.length) { els.chartEmpty.style.display = "flex"; renderLegend([]); return; }
+      els.chartEmpty.style.display = "none"; renderLegend(data);
+      state.chart = new Chart(els.pieCanvas, {
+        type: "pie",
+        data: { labels: data.map((item) => item.name), datasets: [{ data: data.map((item) => item.value), backgroundColor: data.map((_, i) => PIE_COLORS[i % PIE_COLORS.length]), borderColor: "#ffffff", borderWidth: 2 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(context) { const value = context.raw || 0; const totalValue = context.dataset.data.reduce((a, b) => a + b, 0); const percent = totalValue ? Math.round((value / totalValue) * 100) : 0; return `${context.label}: ${value} (${percent}%)`; } } } } }
+      });
+    }
+    function fetchColumnLResults() {
+      setChartError(""); updateDebug("開始抓取 L 欄資料...", []);
+      const callbackName = `quizJsonpCallback_${Date.now()}_${Math.floor(Math.random() * 100000)}`;
+      return new Promise((resolve, reject) => {
+        const timeoutId = window.setTimeout(() => { cleanup(); const message = "讀取 L 欄資料逾時，請確認 Apps Script 已重新部署且開放存取。"; setChartError(message); updateDebug(message, []); renderChart([]); reject(new Error(message)); }, 10000);
+        const script = document.createElement("script"); script.async = true;
+        function cleanup() { window.clearTimeout(timeoutId); if (script.parentNode) script.parentNode.removeChild(script); try { delete window[callbackName]; } catch (_) { window[callbackName] = undefined; } }
+        window[callbackName] = function(payload) {
+          cleanup();
+          if (!payload || !payload.success) { const message = payload && payload.message ? payload.message : "無法讀取 L 欄資料"; setChartError(message); updateDebug(message, []); renderChart([]); reject(new Error(message)); return; }
+          let values = payload.values;
+          if (!Array.isArray(values)) { try { values = JSON.parse(values); } catch (_) { values = []; } }
+          const safeValues = Array.isArray(values) ? values.map((v) => String(v)) : [];
+          const chartData = buildPieDataFromColumnL(safeValues);
+          updateDebug(`抓取成功，共 ${safeValues.length} 筆，統計後 ${chartData.length} 個類別。`, safeValues);
+          renderChart(chartData);
+          resolve(payload);
+        };
+        script.onerror = function() { cleanup(); const message = "無法載入統計資料，請確認 Apps Script 權限與 doGet(JSONP) 設定。"; setChartError(message); updateDebug(message, []); renderChart([]); reject(new Error(message)); };
+        const url = `${GOOGLE_APPS_SCRIPT_URL}?action=column_l&sheetId=${encodeURIComponent(GOOGLE_SHEET_ID)}&prefix=${encodeURIComponent(callbackName)}`;
+        updateDebug(`正在載入：${url}`, []); script.src = url; document.body.appendChild(script);
+      });
+    }
+    document.addEventListener("keydown", (event) => {
+      const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+      state.secretInput = [...state.secretInput, key].slice(-KONAMI_SEQUENCE.length);
+      const matched = KONAMI_SEQUENCE.every((expected, index) => state.secretInput[index] === expected);
+      if (matched) { state.secretInput = []; openSecretModal(); }
+    });
+    els.closeModalBtn.addEventListener("click", closeSecretModal);
+    els.reloadChartBtn.addEventListener("click", fetchColumnLResults);
+    els.secretModal.addEventListener("click", (e) => { if (e.target === els.secretModal) closeSecretModal(); });
+    console.assert(calculateCounts({ 1: "A", 2: "A" }).counts.R === 2, "R count should be 2");
+    console.assert(calculateCounts({ 1: "B", 2: "C", 3: "B" }).counts.D === 2, "D count should be 2");
+    console.assert(calculateCounts({ 1: "A", 2: "B", 3: "A", 4: "B" }).winners.length === 2, "Should detect tied winners");
+    console.assert(buildPieDataFromColumnL(["R", "R", "D", "R,D"])[0].value === 3, "R should aggregate correctly");
+    renderQuestions(); updateProgress();
+  </script>
+</body>
+</html>
